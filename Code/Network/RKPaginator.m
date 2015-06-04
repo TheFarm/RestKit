@@ -177,7 +177,7 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
 
 - (void)loadPage:(NSUInteger)pageNumber
 {
-    if (self.objectRequestOperation.HTTPRequestOperation.response) {
+    if (self.objectRequestOperation.HTTPRequestOperation.response || self.error) {
         // The user by calling loadPage is ready to perform the next request so invalidate objectRequestOperation
         self.objectRequestOperation = nil;
     }
@@ -185,6 +185,7 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
     NSAssert(self.responseDescriptors, @"Cannot perform a load with nil response descriptors.");
     NSAssert(! self.objectRequestOperation, @"Cannot perform a load while one is already in progress.");
     self.currentPage = pageNumber;
+    self.error = nil;
     
     NSMutableURLRequest *mutableRequest = [self.request mutableCopy];
     mutableRequest.URL = self.URL;
