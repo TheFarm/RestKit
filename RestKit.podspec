@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             =  'RestKit'
-  s.version          =  '0.24.1'
+  s.version          =  '0.25.0'
   s.summary          =  'RestKit is a framework for consuming and modeling RESTful web resources on iOS and OS X.'
   s.homepage         =  'https://github.com/RestKit/RestKit'
   s.social_media_url =  'https://twitter.com/RestKit'
@@ -38,7 +38,7 @@ EOS
     os.source_files   = 'Code/ObjectMapping.h', 'Code/ObjectMapping'
     os.dependency       'RestKit/Support'
     os.dependency       'RKValueTransformers', '~> 1.1.0'
-    os.dependency       'ISO8601DateFormatterValueTransformer', '~> 0.6.0'
+    os.dependency       'ISO8601DateFormatterValueTransformer', '~> 0.6.1'
   end
 
   s.subspec 'Network' do |ns|
@@ -100,6 +100,6 @@ EOS
 
   s.subspec 'Support' do |ss|
     ss.source_files   = 'Code/RestKit.h', 'Code/Support.h', 'Code/Support', 'Vendor/LibComponentLogging/Core'
-    ss.dependency 'TransitionKit', '~> 2.1.0'
+    ss.dependency 'TransitionKit', '~> 2.2'
   end
 end

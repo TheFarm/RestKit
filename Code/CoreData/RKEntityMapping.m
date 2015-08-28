@@ -142,6 +142,7 @@ static BOOL entityIdentificationInferenceEnabled = YES;
 @implementation RKEntityMapping
 
 @synthesize identificationAttributes = _identificationAttributes;
+@synthesize shouldMapRelationshipsIfObjectIsUnmodified = _shouldMapRelationshipsIfObjectIsUnmodified;
 
 + (instancetype)mappingForClass:(Class)objectClass
 {
@@ -190,6 +191,7 @@ static BOOL entityIdentificationInferenceEnabled = YES;
     copy.entity = self.entity;
     copy.identificationAttributes = self.identificationAttributes;
     copy.identificationPredicate = self.identificationPredicate;
+    copy.identificationPredicateBlock = self.identificationPredicateBlock;
     copy.deletionPredicate = self.deletionPredicate;
     copy.modificationAttribute = self.modificationAttribute;
     copy.mutableConnections = [NSMutableArray array];
