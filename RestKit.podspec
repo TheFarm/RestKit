@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             =  'RestKit'
-  s.version          =  '0.25.0'
+  s.version          =  '0.26.0'
   s.summary          =  'RestKit is a framework for consuming and modeling RESTful web resources on iOS and OS X.'
   s.homepage         =  'https://github.com/RestKit/RestKit'
   s.social_media_url =  'https://twitter.com/RestKit'
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
 
   # Add Core Data to the PCH if the Core Data subspec is imported. This enables conditional compilation to kick in.
   s.prefix_header_contents = <<-EOS
-#if __has_include("RKCoreData.h")
+#if __has_include(<RestKit/CoreData.h>)
     #import <CoreData/CoreData.h>
 #endif
 EOS
@@ -99,7 +99,13 @@ EOS
   end
 
   s.subspec 'Support' do |ss|
-    ss.source_files   = 'Code/RestKit.h', 'Code/Support.h', 'Code/Support', 'Vendor/LibComponentLogging/Core'
+    ss.source_files   = 'Code/RestKit.h', 'Code/Support.h', 'Code/Support'
     ss.dependency 'TransitionKit', '~> 2.2'
+  end
+
+  s.subspec 'CocoaLumberjack' do |cl|
+    cl.source_files = 'Code/CocoaLumberjack/RKLumberjackLogger.*'
+    cl.dependency 'CocoaLumberjack'
+    cl.dependency 'RestKit/Support'
   end
 end

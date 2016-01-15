@@ -19,14 +19,13 @@
 //
 
 #import <CoreFoundation/CoreFoundation.h>
-#import "RKObjectMapping.h"
-#import "RKRelationshipMapping.h"
-#import "RKPropertyInspector.h"
-#import "RKLog.h"
-#import "RKAttributeMapping.h"
-#import "RKRelationshipMapping.h"
-#import "RKValueTransformers.h"
-#import "ISO8601DateFormatterValueTransformer.h"
+#import <ISO8601DateFormatterValueTransformer/ISO8601DateFormatterValueTransformer.h>
+#import <RKValueTransformers/RKValueTransformers.h>
+#import <RestKit/ObjectMapping/RKAttributeMapping.h>
+#import <RestKit/ObjectMapping/RKObjectMapping.h>
+#import <RestKit/ObjectMapping/RKPropertyInspector.h>
+#import <RestKit/ObjectMapping/RKRelationshipMapping.h>
+#import <RestKit/Support/RKLog.h>
 
 typedef NSString * (^RKSourceToDesinationKeyTransformationBlock)(RKObjectMapping *, NSString *);
 
@@ -148,6 +147,14 @@ static RKSourceToDesinationKeyTransformationBlock defaultSourceToDestinationKeyT
         RKISO8601DateFormatter *dateFormatter = [RKISO8601DateFormatter defaultISO8601DateFormatter];
         [[RKValueTransformer defaultValueTransformer] insertValueTransformer:dateFormatter atIndex:0];
     });
+}
+
+// Compiler requires we override this.
+- (instancetype)init
+{
+    self = [self initWithClass:nil];
+    NSAssert(NO, @"Failed to call designated initializer of %@", self);
+    return self;
 }
 
 - (instancetype)initWithClass:(Class)objectClass

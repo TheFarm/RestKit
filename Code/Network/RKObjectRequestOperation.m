@@ -18,20 +18,20 @@
 //  limitations under the License.
 //
 
+#import <RestKit/Network/RKObjectRequestOperation.h>
+#import <RestKit/Network/RKResponseDescriptor.h>
+#import <RestKit/Network/RKResponseMapperOperation.h>
+#import <RestKit/ObjectMapping/RKHTTPUtilities.h>
+#import <RestKit/ObjectMapping/RKMappingErrors.h>
+#import <RestKit/Support/RKLog.h>
+#import <RestKit/Support/RKMIMETypeSerialization.h>
+#import <RestKit/Support/RKOperationStateMachine.h>
 #import <objc/runtime.h>
-#import "RKObjectRequestOperation.h"
-#import "RKResponseMapperOperation.h"
-#import "RKResponseDescriptor.h"
-#import "RKMIMETypeSerialization.h"
-#import "RKHTTPUtilities.h"
-#import "RKLog.h"
-#import "RKMappingErrors.h"
-#import "RKOperationStateMachine.h"
 
 #import <Availability.h>
 
 #if __IPHONE_OS_VERSION_MIN_REQUIRED
-#import "AFNetworkActivityIndicatorManager.h"
+#import <AFNetworking/AFNetworkActivityIndicatorManager.h>
 #endif
 
 // Set Logging Component
@@ -122,7 +122,6 @@ static NSString *RKLogTruncateString(NSString *string)
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-static void *RKParentObjectRequestOperation = &RKParentObjectRequestOperation;
 static void *RKOperationStartDate = &RKOperationStartDate;
 static void *RKOperationFinishDate = &RKOperationFinishDate;
 
@@ -131,7 +130,6 @@ static void *RKOperationFinishDate = &RKOperationFinishDate;
     // Weakly tag the HTTP operation with its parent object request operation
     RKObjectRequestOperation *objectRequestOperation = [notification object];
     objc_setAssociatedObject(objectRequestOperation, RKOperationStartDate, [NSDate date], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    objc_setAssociatedObject(objectRequestOperation.HTTPRequestOperation, RKParentObjectRequestOperation, objectRequestOperation, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     NSURLRequest *request = objectRequestOperation.HTTPRequestOperation.request;
     RKLogInfo(@"%@ '%@'", request.HTTPMethod, request.URL.absoluteString);
@@ -299,13 +297,21 @@ static NSString *RKStringDescribingURLResponseWithData(NSURLResponse *response, 
     _successCallbackQueue = NULL;
 }
 
+// Compiler requires that we override this.
+- (instancetype)init
+{
+    self = [self initWithHTTPRequestOperation:nil responseDescriptors:nil];
+    NSAssert(NO, @"Failed to call designated initializer on %@.", self);
+    return self;
+}
+
 // Designated initializer
 - (instancetype)initWithHTTPRequestOperation:(RKHTTPRequestOperation *)requestOperation responseDescriptors:(NSArray *)responseDescriptors
 {
     NSParameterAssert(requestOperation);
     NSParameterAssert(responseDescriptors);
     
-    self = [self init];
+    self = [super init];
     if (self) {
         self.responseDescriptors = responseDescriptors;
         self.HTTPRequestOperation = requestOperation;
