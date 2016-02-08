@@ -207,6 +207,9 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
 #else
     self.objectRequestOperation = [[RKObjectRequestOperation alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
 #endif
+    
+    // Append mapping metadata if any.
+    self.objectRequestOperation.mappingMetadata = self.mappingMetadata;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-retain-cycles"

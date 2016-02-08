@@ -105,6 +105,11 @@
 @property (nonatomic, strong, readonly) RKObjectRequestOperation *objectRequestOperation;
 
 /**
+ An optional parameter to append metadata on each RKObjectRequestOperation.
+ */
+@property (nonatomic, strong) NSDictionary *mappingMetadata;
+
+/**
  Sets the `RKHTTPRequestOperation` subclass to be used when constructing HTTP request operations for requests dispatched by the paginator.
  
  **Default**: `[RKHTTPRequestOperation class]`
