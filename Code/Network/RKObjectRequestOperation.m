@@ -145,7 +145,7 @@ static void *RKOperationFinishDate = &RKOperationFinishDate;
 
 - (void)HTTPOperationDidFinish:(NSNotification *)notification
 {
-    objc_setAssociatedObject(operation, RKOperationFinishDate, [NSDate date], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(notification.object, RKOperationFinishDate, [NSDate date], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void)objectRequestOperationDidFinish:(NSNotification *)notification
