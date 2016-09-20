@@ -19,8 +19,8 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <RestKit/ObjectMapping/RKMappingOperation.h>
-#import <RestKit/Testing/RKPropertyMappingTestExpectation.h>
+#import "RKMappingOperation.h"
+#import "RKPropertyMappingTestExpectation.h"
 
 @protocol RKMappingOperationDataSource, RKManagedObjectCaching;
 
@@ -217,7 +217,7 @@ extern NSString * const RKMappingTestExpectationErrorKey;
  */
 @property (nonatomic, strong, readonly) id destinationObject;
 
-#ifdef _COREDATADEFINES_H
+#if __has_include("CoreData.h")
 
 ///----------------------------
 /// @name Core Data Integration
@@ -237,6 +237,6 @@ extern NSString * const RKMappingTestExpectationErrorKey;
  */
 @property (nonatomic, strong) id<RKManagedObjectCaching> managedObjectCache;
 
-#endif // _COREDATADEFINES_H
+#endif // #if __has_include("CoreData.h")
 
 @end

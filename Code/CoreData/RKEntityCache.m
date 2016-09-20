@@ -18,12 +18,13 @@
 //  limitations under the License.
 //
 
+#import <Foundation/Foundation.h>
 #if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>
 #endif
 
-#import <RestKit/CoreData/RKEntityByAttributeCache.h>
-#import <RestKit/CoreData/RKEntityCache.h>
+#import "RKEntityByAttributeCache.h"
+#import "RKEntityCache.h"
 
 @interface RKEntityCache ()
 @property (nonatomic, strong) NSMutableSet *attributeCaches;
@@ -189,7 +190,7 @@
         [cache addObjects:objects completion:^{
             if (dispatchGroup) dispatch_group_leave(dispatchGroup);
         }];
-    }    
+    }
     if (dispatchGroup) [self waitForDispatchGroup:dispatchGroup withCompletionBlock:completion];
 }
 
@@ -257,7 +258,7 @@
     for (RKEntityByAttributeCache *attributeCache in [self attributeCachesForEntity:managedObject.entity]) {
         if ([attributeCache containsObject:managedObject]) return YES;
     }
-    
+
     return NO;
 }
 
