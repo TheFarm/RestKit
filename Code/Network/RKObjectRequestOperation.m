@@ -158,6 +158,9 @@ static void *RKOperationFinishDate = &RKOperationFinishDate;
     NSTimeInterval httpRequestExecutionDuration = [objc_getAssociatedObject(HTTPRequestOperation, RKOperationFinishDate) timeIntervalSinceDate:objc_getAssociatedObject(HTTPRequestOperation, RKOperationStartDate)];
     NSDate *mappingDidStartTime = (notification.userInfo)[RKObjectRequestOperationMappingDidFinishUserInfoKey];
     NSTimeInterval mappingDuration = [mappingDidStartTime isEqual:[NSNull null]] ? 0.0 : [mappingDidStartTime timeIntervalSinceDate:(notification.userInfo)[RKObjectRequestOperationMappingDidStartUserInfoKey]];
+
+    objc_setAssociatedObject(notification.object, RKOperationStartDate, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(notification.object, RKOperationFinishDate, nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     NSURLRequest *request = HTTPRequestOperation.request;
     NSHTTPURLResponse *response = HTTPRequestOperation.response;
