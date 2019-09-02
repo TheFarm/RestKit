@@ -433,46 +433,6 @@
     expect(serializations).to.contain(string);
 }
 
-- (void)testParameterizationofBooleanPropertiesFromManagedObjectProperty
-{
-    RKHuman *human = [RKTestFactory insertManagedObjectForEntityForName:@"Human" inManagedObjectContext:nil withProperties:nil];
-    human.isHappy = @YES;
-    human.name = @"Blake Watters";
-    RKObjectMapping *mapping = [RKObjectMapping requestMapping];
-    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"name" toKeyPath:@"name"]];
-    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"isHappy" toKeyPath:@"happy"]];
-    
-    NSError *error = nil;
-    RKRequestDescriptor *requestDescriptor = [RKRequestDescriptor requestDescriptorWithMapping:mapping objectClass:[NSDictionary class] rootKeyPath:nil method:RKRequestMethodAny];
-    NSDictionary *parameters = [RKObjectParameterization parametersWithObject:human requestDescriptor:requestDescriptor error:&error];
-    
-    NSData *data = [RKMIMETypeSerialization dataFromObject:parameters MIMEType:RKMIMETypeJSON error:&error];
-    NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    
-    expect(error).to.beNil();
-    expect(string).to.equal(@"{\"name\":\"Blake Watters\",\"happy\":true}");
-}
-
-- (void)testParameterizationofBooleanPropertiesFromManagedObjectPropertyWithFalseValue
-{
-    RKHuman *human = [RKTestFactory insertManagedObjectForEntityForName:@"Human" inManagedObjectContext:nil withProperties:nil];
-    human.isHappy = @NO;
-    human.name = @"Blake Watters";
-    RKObjectMapping *mapping = [RKObjectMapping requestMapping];
-    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"name" toKeyPath:@"name"]];
-    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"isHappy" toKeyPath:@"happy"]];
-    
-    NSError *error = nil;
-    RKRequestDescriptor *requestDescriptor = [RKRequestDescriptor requestDescriptorWithMapping:mapping objectClass:[NSDictionary class] rootKeyPath:nil method:RKRequestMethodAny];
-    NSDictionary *parameters = [RKObjectParameterization parametersWithObject:human requestDescriptor:requestDescriptor error:&error];
-    
-    NSData *data = [RKMIMETypeSerialization dataFromObject:parameters MIMEType:RKMIMETypeJSON error:&error];
-    NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    
-    expect(error).to.beNil();
-    expect(string).to.equal(@"{\"name\":\"Blake Watters\",\"happy\":false}");
-}
-
 - (void)testSerializingWithDynamicNestingAttributeWithBraces
 {
     NSDictionary *object = @{ @"name" : @"blake", @"occupation" : @"Hacker" };
@@ -501,24 +461,6 @@
     NSDictionary *parameters = [RKObjectParameterization parametersWithObject:object requestDescriptor:requestDescriptor error:&error];
     NSDictionary *expected = @{@"blake": @{@"name": @"blake", @"job": @"Hacker"}};
     expect(parameters).to.equal(expected);
-}
-
-- (void)testParameterizationOfCoreDataEntityWithDateToNestedKeypath
-{
-    RKHuman *human = [RKTestFactory insertManagedObjectForEntityForName:@"Human" inManagedObjectContext:nil withProperties:nil];
-    human.birthday = [NSDate dateWithTimeIntervalSince1970:0];
-    RKObjectMapping *mapping = [RKObjectMapping requestMapping];
-    [mapping addPropertyMapping:[RKAttributeMapping attributeMappingFromKeyPath:@"birthday" toKeyPath:@"nestedPath.birthday"]];
-    
-    NSError *error = nil;
-    RKRequestDescriptor *requestDescriptor = [RKRequestDescriptor requestDescriptorWithMapping:mapping objectClass:[NSDictionary class] rootKeyPath:nil method:RKRequestMethodAny];
-    NSDictionary *parameters = [RKObjectParameterization parametersWithObject:human requestDescriptor:requestDescriptor error:&error];
-    
-    NSData *data = [RKMIMETypeSerialization dataFromObject:parameters MIMEType:RKMIMETypeJSON error:&error];
-    NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    
-    expect(error).to.beNil();
-    expect(string).to.equal(@"{\"nestedPath\":{\"birthday\":\"1970-01-01T00:00:00.000Z\"}}");
 }
 
 - (void)testParameterizationFromLocationToNestedDictionaryUsingValueTransformer
@@ -723,34 +665,6 @@ typedef NS_ENUM(NSInteger, RKFlightSearchMode) {
     NSDictionary *jsonDictionary = [NSJSONSerialization JSONObjectWithData:JSON options:0 error:nil];
     assertThat(error, is(nilValue()));
     assertThat(jsonDictionary, is(equalTo(params)));
-}
-
-- (void)testShouldSerializeManagedHasManyRelationshipsToJSON
-{
-    RKManagedObjectStore *managedObjectStore = [RKTestFactory managedObjectStore];
-    RKObjectMapping *humanMapping = [RKObjectMapping mappingForClass:[RKHuman class]];
-    [humanMapping addAttributeMappingsFromArray:@[@"name"]];
-    RKObjectMapping *catMapping = [RKObjectMapping mappingForClass:[RKCat class]];
-    [catMapping addAttributeMappingsFromArray:@[@"name"]];
-    [humanMapping addPropertyMapping:[RKRelationshipMapping relationshipMappingFromKeyPath:@"cats" toKeyPath:@"cats" withMapping:catMapping]];
-
-    RKHuman *blake = [NSEntityDescription insertNewObjectForEntityForName:@"Human" inManagedObjectContext:managedObjectStore.persistentStoreManagedObjectContext];
-    blake.name = @"Blake Watters";
-    RKCat *asia = [NSEntityDescription insertNewObjectForEntityForName:@"Cat" inManagedObjectContext:managedObjectStore.persistentStoreManagedObjectContext];
-    asia.name = @"Asia";
-    RKCat *roy = [NSEntityDescription insertNewObjectForEntityForName:@"Cat" inManagedObjectContext:managedObjectStore.persistentStoreManagedObjectContext];
-    roy.name = @"Roy";
-    blake.cats = [NSSet setWithObjects:asia, roy, nil];
-
-    RKObjectMapping *serializationMapping = [humanMapping inverseMapping];
-
-    NSDictionary *params = [RKObjectParameterization parametersWithObject:blake requestDescriptor:[RKRequestDescriptor requestDescriptorWithMapping:serializationMapping objectClass:[RKHuman class] rootKeyPath:nil method:RKRequestMethodAny] error:nil];
-    NSError *error = nil;
-    NSDictionary *parsedJSON = [NSJSONSerialization JSONObjectWithData:[RKMIMETypeSerialization dataFromObject:params MIMEType:RKMIMETypeJSON error:nil] options:0 error:nil];
-    assertThat(error, is(nilValue()));
-    assertThat([parsedJSON valueForKey:@"name"], is(equalTo(@"Blake Watters")));
-    NSArray *catNames = [[parsedJSON valueForKeyPath:@"cats.name"] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-    assertThat(catNames, is(equalTo(@[@"Asia", @"Roy"])));
 }
 
 - (void)testParameterizingHasManyRelationshipToNestedKeyPath

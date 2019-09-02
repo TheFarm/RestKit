@@ -7,7 +7,6 @@ workspace 'RestKit.xcworkspace'
 
 def import_pods
   pod 'RestKit/Testing', :path => '.'
-  pod 'RestKit/Search', :path => '.'
 
   pod 'Specta', '1.0.6'
   pod 'OCMock', '2.2.4'

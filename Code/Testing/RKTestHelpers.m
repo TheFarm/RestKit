@@ -26,11 +26,6 @@
 #import "SOCKit.h"
 #import "RKRouteSet.h"
 
-#if __has_include("CoreData.h")
-#define RKCoreDataIncluded
-#import "RKManagedObjectRequestOperation.h"
-#endif
-
 @implementation RKTestHelpers
 
 + (RKRoute *)stubRouteForClass:(Class)objectClass method:(RKRequestMethod)method withPathPattern:(NSString *)pathPattern onObjectManager:(RKObjectManager *)nilOrObjectManager
@@ -52,9 +47,6 @@
     [objectManager.router.routeSet removeRoute:route];
     RKRoute *stubbedRoute = [RKRoute routeWithName:routeName pathPattern:pathPattern method:route.method];
     [objectManager.router.routeSet addRoute:stubbedRoute];
-#ifdef RKCoreDataIncluded
-    [self copyFetchRequestBlocksMatchingPathPattern:route.pathPattern toBlocksMatchingRelativeString:pathPattern onObjectManager:objectManager];
-#endif
     return stubbedRoute;
 }
 
@@ -66,49 +58,8 @@
     [objectManager.router.routeSet removeRoute:route];
     RKRoute *stubbedRoute = [RKRoute routeWithRelationshipName:relationshipName objectClass:objectClass pathPattern:pathPattern method:method];
     [objectManager.router.routeSet addRoute:stubbedRoute];
-#ifdef RKCoreDataIncluded
-    [self copyFetchRequestBlocksMatchingPathPattern:route.pathPattern toBlocksMatchingRelativeString:pathPattern onObjectManager:objectManager];
-#endif
     return stubbedRoute;
 }
-
-#ifdef RKCoreDataIncluded
-+ (void)copyFetchRequestBlocksMatchingPathPattern:(NSString *)pathPattern
-                   toBlocksMatchingRelativeString:(NSString *)relativeString
-                                  onObjectManager:(RKObjectManager *)nilOrObjectManager
-{
-    RKObjectManager *objectManager = nilOrObjectManager ?: [RKObjectManager sharedManager];
-
-    // Extract the dynamic portions of the path pattern to construct a set of parameters
-    SOCPattern *pattern = [SOCPattern patternWithString:pathPattern];
-    NSArray *parameterNames = [pattern valueForKeyPath:@"parameters.string"];
-    NSMutableDictionary *stubbedParameters = [NSMutableDictionary dictionaryWithCapacity:[parameterNames count]];
-    for (NSString *parameter in parameterNames) {
-        [stubbedParameters setValue:@"value" forKey:parameter];
-    }
-    NSString *stubbedPathPattern = [pattern stringFromObject:stubbedParameters];
-
-    NSURL *URL = [NSURL URLWithString:stubbedPathPattern relativeToURL:objectManager.HTTPClient.baseURL];
-    NSAssert(URL, @"Failed to build URL from path pattern '%@' relative to base URL '%@'", pathPattern, objectManager.HTTPClient.baseURL);
-    for (RKFetchRequestBlock block in objectManager.fetchRequestBlocks) {
-        NSFetchRequest *fetchRequest = block(URL);
-        if (fetchRequest) {
-            // Add a new block that matches our stubbed path
-            [objectManager addFetchRequestBlock:^NSFetchRequest *(NSURL *URL) {
-                // TODO: Note that relativeString does not work because NSURLRequest drops the relative parent of the URL
-                //                if ([[URL relativeString] isEqualToString:relativeString]) {
-                if ([[URL path] isEqualToString:relativeString]) {
-                    return fetchRequest;
-                }
-
-                return nil;
-            }];
-
-            break;
-        }
-    }
-}
-#endif
 
 + (void)disableCaching
 {

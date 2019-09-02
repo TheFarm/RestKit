@@ -39,12 +39,6 @@
 #import "RKRoute.h"
 #import "RKRouteSet.h"
 
-#if __has_include("CoreData.h")
-#   define RKCoreDataIncluded
-#   import "RKManagedObjectStore.h"
-#   import "RKManagedObjectRequestOperation.h"
-#endif
-
 #if !__has_feature(objc_arc)
 #error RestKit must be built with ARC. \
 You can turn on ARC for only RestKit files by adding "-fobjc-arc" to the build phase for each of its files.
@@ -57,24 +51,6 @@ static RKObjectManager  *sharedManager = nil;
 
 //////////////////////////////////
 // Utility Functions
-
-/**
- Returns the subset of the given array of `RKResponseDescriptor` objects that match the given path.
- 
- @param responseDescriptors An array of `RKResponseDescriptor` objects.
- @param path The path for which to select matching response descriptors.
- @param method The method for which to select matching response descriptors.
- @return An `NSArray` object whose elements are `RKResponseDescriptor` objects matching the given path and method.
- */
-#ifdef RKCoreDataIncluded
-static NSArray *RKFilteredArrayOfResponseDescriptorsMatchingPathAndMethod(NSArray *responseDescriptors, NSString *path, RKRequestMethod method)
-{
-    NSIndexSet *indexSet = [responseDescriptors indexesOfObjectsPassingTest:^BOOL(RKResponseDescriptor *responseDescriptor, NSUInteger idx, BOOL *stop) {
-        return [responseDescriptor matchesPath:path] && (method & responseDescriptor.method);
-    }];
-    return [responseDescriptors objectsAtIndexes:indexSet];
-}
-#endif
 
 /**
  Returns the first `RKRequestDescriptor` object from the given array that matches the given object.
@@ -215,76 +191,9 @@ extern NSString *RKStringDescribingRequestMethod(RKRequestMethod method);
 
 @end
 
-/**
- Returns `YES` if the given array of `RKResponseDescriptor` objects contains an `RKEntityMapping` anywhere in its object graph.
- 
- @param responseDescriptors An array of `RKResponseDescriptor` objects.
- @return `YES` if the `mapping` property of any of the response descriptor objects in the given array is an instance of `RKEntityMapping`, else `NO`.
- */
-#ifdef RKCoreDataIncluded
-static BOOL RKDoesArrayOfResponseDescriptorsContainEntityMapping(NSArray *responseDescriptors)
-{
-    // Visit all mappings accessible from the object graphs of all response descriptors
-    NSMutableSet *accessibleMappings = [NSMutableSet set];
-    for (RKResponseDescriptor *responseDescriptor in responseDescriptors) {
-        if (! [accessibleMappings containsObject:responseDescriptor.mapping]) {
-            RKMappingGraphVisitor *graphVisitor = [[RKMappingGraphVisitor alloc] initWithMapping:responseDescriptor.mapping];
-            [accessibleMappings unionSet:graphVisitor.mappings];
-        }
-    }
-    
-    // Enumerate all mappings and search for an `RKEntityMapping`
-    for (RKMapping *mapping in accessibleMappings) {
-        if ([mapping isKindOfClass:[RKEntityMapping class]]) {
-            return YES;
-        }
-        
-        if ([mapping isKindOfClass:[RKDynamicMapping class]]) {
-            RKDynamicMapping *dynamicMapping = (RKDynamicMapping *)mapping;
-            if ([dynamicMapping.objectMappings count] == 0) {
-                // Likely means that there is a representation block, assume `YES`
-                return YES;
-            }
-        }
-    }
-    
-    return NO;
-}
-#endif
-
 BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *responseDescriptors);
 BOOL RKDoesArrayOfResponseDescriptorsContainOnlyEntityMappings(NSArray *responseDescriptors)
 {
-#ifdef RKCoreDataIncluded
-    // Visit all mappings accessible from the object graphs of all response descriptors
-    NSMutableSet *accessibleMappings = [NSMutableSet set];
-    for (RKResponseDescriptor *responseDescriptor in responseDescriptors) {
-        if (! [accessibleMappings containsObject:responseDescriptor.mapping]) {
-            RKMappingGraphVisitor *graphVisitor = [[RKMappingGraphVisitor alloc] initWithMapping:responseDescriptor.mapping];
-            [accessibleMappings unionSet:graphVisitor.mappings];
-        }
-    }
-
-    NSMutableSet *mappingClasses = [NSMutableSet set];
-    // Enumerate all mappings and search for an `RKEntityMapping`
-    for (RKMapping *mapping in accessibleMappings) {
-        if ([mapping isKindOfClass:[RKDynamicMapping class]]) {
-            [mappingClasses addObjectsFromArray:[[(RKDynamicMapping *)mapping objectMappings] valueForKey:@"class"]];
-        } else {
-            [mappingClasses addObject:mapping.class];
-        }
-    }
-
-    if ([mappingClasses count]) {
-        for (Class mappingClass in mappingClasses) {
-            if (! [mappingClass isSubclassOfClass:[RKEntityMapping class]]) {
-                return NO;
-            }
-        }
-        return YES;
-    }
-#endif
-    
     return NO;
 }
 
@@ -598,34 +507,6 @@ static NSString *RKMIMETypeFromAFHTTPClientParameterEncoding(AFRKHTTPClientParam
     return operation;
 }
 
-#ifdef RKCoreDataIncluded
-- (RKManagedObjectRequestOperation *)managedObjectRequestOperationWithRequest:(NSURLRequest *)request
-                                                          managedObjectContext:(NSManagedObjectContext *)managedObjectContext
-                                                                      success:(void (^)(RKObjectRequestOperation *operation, RKMappingResult *mappingResult))success
-                                                                      failure:(void (^)(RKObjectRequestOperation *operation, NSError *error))failure
-{
-    return [self managedObjectRequestOperationWithRequest:request responseDescriptors:self.responseDescriptors managedObjectContext:managedObjectContext success:success failure:failure];
-}
-
-- (RKManagedObjectRequestOperation *)managedObjectRequestOperationWithRequest:(NSURLRequest *)request
-                                                          responseDescriptors:(NSArray *)responseDescriptors
-                                                         managedObjectContext:(NSManagedObjectContext *)managedObjectContext
-                                                                      success:(void (^)(RKObjectRequestOperation *operation, RKMappingResult *mappingResult))success
-                                                                      failure:(void (^)(RKObjectRequestOperation *operation, NSError *error))failure
-{
-    Class HTTPRequestOperationClass = [self requestOperationClassForRequest:request fromRegisteredClasses:self.registeredHTTPRequestOperationClasses] ?: [RKHTTPRequestOperation class];
-    RKHTTPRequestOperation *HTTPRequestOperation = [[HTTPRequestOperationClass alloc] initWithRequest:request];
-    [self copyStateFromHTTPClientToHTTPRequestOperation:HTTPRequestOperation];
-    Class objectRequestOperationClass = [self requestOperationClassForRequest:request fromRegisteredClasses:self.registeredManagedObjectRequestOperationClasses] ?: [RKManagedObjectRequestOperation class];
-    RKManagedObjectRequestOperation *operation = (RKManagedObjectRequestOperation *)[[objectRequestOperationClass alloc] initWithHTTPRequestOperation:HTTPRequestOperation responseDescriptors:responseDescriptors];
-    [operation setCompletionBlockWithSuccess:success failure:failure];
-    operation.managedObjectContext = managedObjectContext ?: self.managedObjectStore.mainQueueManagedObjectContext;
-    operation.managedObjectCache = self.managedObjectStore.managedObjectCache;
-    operation.fetchRequestBlocks = self.fetchRequestBlocks;
-    return operation;
-}
-#endif
-
 - (id)appropriateObjectRequestOperationWithObject:(id)object
                                            method:(RKRequestMethod)method
                                              path:(NSString *)path
@@ -650,41 +531,8 @@ static NSString *RKMIMETypeFromAFHTTPClientParameterEncoding(AFRKHTTPClientParam
         routingMetadata = @{ @"query": @{ @"parameters": parameters } };
     }
     
-#ifdef RKCoreDataIncluded
-    NSArray *matchingDescriptors = RKFilteredArrayOfResponseDescriptorsMatchingPathAndMethod(self.responseDescriptors, path, method);
-    BOOL containsEntityMapping = RKDoesArrayOfResponseDescriptorsContainEntityMapping(matchingDescriptors);
-    BOOL isManagedObjectRequestOperation = (containsEntityMapping || [object isKindOfClass:[NSManagedObject class]]);
-    
-    if (isManagedObjectRequestOperation && !self.managedObjectStore) RKLogWarning(@"Asked to create an `RKManagedObjectRequestOperation` object, but managedObjectStore is nil.");
-    if (isManagedObjectRequestOperation && self.managedObjectStore) {
-        // Construct a Core Data operation
-        NSManagedObjectContext *managedObjectContext = [object respondsToSelector:@selector(managedObjectContext)] ? [object managedObjectContext] : self.managedObjectStore.mainQueueManagedObjectContext;
-        operation = [self managedObjectRequestOperationWithRequest:request responseDescriptors:matchingDescriptors managedObjectContext:managedObjectContext success:nil failure:nil];
-
-        if ([object isKindOfClass:[NSManagedObject class]]) {
-            static NSPredicate *temporaryObjectsPredicate = nil;
-            if (! temporaryObjectsPredicate) temporaryObjectsPredicate = [NSPredicate predicateWithFormat:@"objectID.isTemporaryID == YES"];
-            [managedObjectContext performBlockAndWait:^{
-                NSSet *temporaryObjects = [[managedObjectContext insertedObjects] filteredSetUsingPredicate:temporaryObjectsPredicate];
-                if ([temporaryObjects count]) {
-                    RKLogInfo(@"Asked to perform object request for NSManagedObject with temporary object IDs: Obtaining permanent ID before proceeding.");
-                    BOOL success;
-                    NSError *error;
-                    
-                    success = [managedObjectContext obtainPermanentIDsForObjects:[temporaryObjects allObjects] error:&error];
-                    
-                    if (! success) RKLogWarning(@"Failed to obtain permanent ID for object %@: %@", object, error);
-                }
-            }];
-        }
-    } else {
-        // Non-Core Data operation
-        operation = [self objectRequestOperationWithRequest:request responseDescriptors:matchingDescriptors success:nil failure:nil];
-    }
-#else
     // Non-Core Data operation
     operation = [self objectRequestOperationWithRequest:request success:nil failure:nil];
-#endif
     
     if (RKDoesArrayOfResponseDescriptorsContainMappingForClass(self.responseDescriptors, [object class])) operation.targetObject = object;
     operation.mappingMetadata = routingMetadata;
@@ -827,11 +675,6 @@ static NSString *RKMIMETypeFromAFHTTPClientParameterEncoding(AFRKHTTPClientParam
     NSAssert(self.paginationMapping, @"Cannot instantiate a paginator when `paginationMapping` is nil.");
     NSMutableURLRequest *request = [self requestWithMethod:@"GET" path:pathPattern parameters:parameters];
     RKPaginator *paginator = [[self.paginationMapping.objectClass alloc] initWithRequest:request paginationMapping:self.paginationMapping responseDescriptors:self.responseDescriptors];
-#ifdef RKCoreDataIncluded
-    paginator.managedObjectContext = self.managedObjectStore.mainQueueManagedObjectContext;
-    paginator.managedObjectCache = self.managedObjectStore.managedObjectCache;
-    paginator.fetchRequestBlocks = self.fetchRequestBlocks;
-#endif
     paginator.operationQueue = self.operationQueue;
     Class HTTPOperationClass = [self requestOperationClassForRequest:request fromRegisteredClasses:self.registeredHTTPRequestOperationClasses];
     if (HTTPOperationClass) [paginator setHTTPOperationClass:HTTPOperationClass];
@@ -898,21 +741,6 @@ static NSString *RKMIMETypeFromAFHTTPClientParameterEncoding(AFRKHTTPClientParam
 }
 
 #pragma mark - Fetch Request Blocks
-
-#ifdef RKCoreDataIncluded
-
-- (NSArray *)fetchRequestBlocks
-{
-    return [NSArray arrayWithArray:self.mutableFetchRequestBlocks];
-}
-
-- (void)addFetchRequestBlock:(NSFetchRequest *(^)(NSURL *URL))block
-{
-    NSParameterAssert(block);
-    [self.mutableFetchRequestBlocks addObject:block];
-}
-
-#endif
 
 #pragma mark - Queue Management
 

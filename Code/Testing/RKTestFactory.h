@@ -18,11 +18,6 @@
 //  limitations under the License.
 //
 
-#if __has_include("CoreData.h")
-#define RKCoreDataIncluded
-#import <CoreData/CoreData.h>
-#endif
-
 /**
  The default filename used for managed object stores created via the factory.
  */
@@ -35,7 +30,6 @@ extern NSString * const RKTestFactoryDefaultNamesClient;
 extern NSString * const RKTestFactoryDefaultNamesObjectManager;
 extern NSString * const RKTestFactoryDefaultNamesManagedObjectStore;
 
-@class RKManagedObjectStore;
 
 /**
  The `RKTestFactory` class provides an interface for initializing RestKit objects within a unit testing environment. The factory is used to ensure isolation between test cases by ensuring that RestKit's important singleton objects are torn down between tests and that each test is working within a clean Core Data environment. Callback hooks are provided so that application specific set up and tear down logic can be integrated as well.
@@ -147,19 +141,6 @@ extern NSString * const RKTestFactoryDefaultNamesManagedObjectStore;
  */
 + (id)sharedObjectFromFactory:(NSString *)factoryName;
 
-#ifdef RKCoreDataIncluded
-/**
- Inserts a new managed object for the `NSEntityDescription` with the given name into the specified  managed object context and sets properties on the instance from the given dictionary. A permanent managed object ID is obtained for the object so that it can be referenced across threads without any further work.
- 
- @param entityName The name of the entity to insert a new managed object for.
- @param managedObjectContext The managed object context to insert the new object into. If nil, then the managed object context returned by invoking `[RKTestFactory managedObjectStore].mainQueueManagedObjectContext]` is used.
- @param properties A dictionary of properties to be set on the new managed object instance.
- @return A new object inheriting from `NSManagedObject`.
- */
-+ (id)insertManagedObjectForEntityForName:(NSString *)entityName
-                   inManagedObjectContext:(NSManagedObjectContext *)managedObjectContext
-                           withProperties:(NSDictionary *)properties;
-#endif
 
 /**
  Returns a set of names for all defined factories.
@@ -186,16 +167,6 @@ extern NSString * const RKTestFactoryDefaultNamesManagedObjectStore;
  */
 + (id)objectManager;
 
-#ifdef RKCoreDataIncluded
-/**
- Fetches the shared an `RKManagedObjectStore` object using the factory defined for the name `RKTestFactoryDefaultNamesManagedObjectStore`.
-
- On first invocation per factory setup/teardown, a new managed object store will be configured and returned. If there is an existing persistent store (i.e. from a previous test invocation), then the persistent store is deleted.
-
- @return The shared managed object store instance.
- */
-+ (RKManagedObjectStore *)managedObjectStore;
-#endif
 
 ///----------------------------------------------
 /// @name Configuring Set Up and Tear Down Blocks

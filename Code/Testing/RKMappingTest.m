@@ -25,16 +25,6 @@
 #import "RKObjectUtilities.h"
 #import "RKLog.h"
 
-// Core Data
-#if __has_include("CoreData.h")
-#define RKCoreDataIncluded
-#import "RKEntityMapping.h"
-#import "RKConnectionDescription.h"
-#import "RKConnectionTestExpectation.h"
-#import "RKFetchRequestManagedObjectCache.h"
-#import "RKManagedObjectMappingOperationDataSource.h"
-#endif
-
 // Error Constants
 NSString * const RKMappingTestErrorDomain = @"org.restkit.RKMappingTest.ErrorDomain";
 NSString * const RKMappingTestEventErrorKey = @"RKMappingTestEventErrorKey";
@@ -48,9 +38,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
 @interface RKMappingTestEvent : NSObject
 
 @property (nonatomic, strong, readonly) RKPropertyMapping *propertyMapping;
-#ifdef RKCoreDataIncluded
-@property (nonatomic, strong, readonly) RKConnectionDescription *connection;
-#endif
 @property (nonatomic, strong, readonly) id value;
 
 @property (weak, nonatomic, readonly) NSString *sourceKeyPath;
@@ -58,18 +45,11 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
 
 + (RKMappingTestEvent *)eventWithMapping:(RKPropertyMapping *)propertyMapping value:(id)value;
 
-#ifdef RKCoreDataIncluded
-+ (RKMappingTestEvent *)eventWithConnection:(RKConnectionDescription *)connection value:(id)value;
-#endif
-
 @end
 
 @interface RKMappingTestEvent ()
 @property (nonatomic, strong, readwrite) id value;
 @property (nonatomic, strong, readwrite) RKPropertyMapping *propertyMapping;
-#ifdef RKCoreDataIncluded
-@property (nonatomic, strong, readwrite) RKConnectionDescription *connection;
-#endif
 @end
 
 @implementation RKMappingTestEvent
@@ -82,16 +62,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
 
     return event;
 }
-
-#ifdef RKCoreDataIncluded
-+ (RKMappingTestEvent *)eventWithConnection:(RKConnectionDescription *)connection value:(id)value
-{
-    RKMappingTestEvent *event = [RKMappingTestEvent new];
-    event.connection = connection;
-    event.value = value;
-    return event;
-}
-#endif
 
 - (NSString *)sourceKeyPath
 {
@@ -109,17 +79,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
         return [NSString stringWithFormat:@"%@ mapped sourceKeyPath '%@' => destinationKeyPath '%@' with value: %@>", [self class],
                 self.sourceKeyPath, self.destinationKeyPath, self.value];
     }
-#ifdef RKCoreDataIncluded
-    else if (self.connection) {
-        if ([self.connection isForeignKeyConnection]) {
-            return [NSString stringWithFormat:@"%@ connected Relationship '%@' using attributes '%@' to value: %@>", [self class],
-                    [self.connection.relationship name], [self.connection.attributes valueForKey:@"name"], self.value];
-        } else if ([self.connection isKeyPathConnection]) {
-            return [NSString stringWithFormat:@"%@ connected Relationship '%@' using keyPath '%@' to value: %@>", [self class],
-                    [self.connection.relationship name], self.connection.keyPath, self.value];
-        }
-    }
-#endif
     
     return [super description];
 }
@@ -202,9 +161,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
 
 - (RKMappingTestEvent *)eventMatchingExpectation:(id)expectation
 {
-#ifdef RKCoreDataIncluded
-    Class connectionTestExpectation = NSClassFromString(@"RKConnectionTestExpectation");
-#endif
     for (RKMappingTestEvent *event in [self.events copy]) {
         if ([expectation isKindOfClass:[RKPropertyMappingTestExpectation class]]) {
             RKPropertyMappingTestExpectation *propertyExpectation = (RKPropertyMappingTestExpectation *) expectation;
@@ -214,14 +170,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
                 return event;
             }
         }
-#ifdef RKCoreDataIncluded
-        else if ([expectation isKindOfClass:connectionTestExpectation]) {
-            RKConnectionTestExpectation *connectionExpectation = (RKConnectionTestExpectation *) expectation;
-            if ([[event.connection.relationship name] isEqualToString:connectionExpectation.relationshipName]) {
-                return event;
-            }
-        }
-#endif
     }
 
     return nil;
@@ -336,39 +284,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
             success = YES;
         }
     }
-#ifdef RKCoreDataIncluded
-    else if ([expectation isKindOfClass:[RKConnectionTestExpectation class]]) {
-        RKConnectionTestExpectation *connectionExpectation = (RKConnectionTestExpectation *)expectation;
-        id expectedValue = connectionExpectation.value;
-        id connectedValue = event.value;
-        
-        // Check that the connection attributes match
-        if (connectionExpectation.attributes) {
-            RKMappingTestCondition([connectionExpectation.attributes isEqualToDictionary:event.connection.attributes], RKMappingTestValueInequalityError, error, @"established connection using unexpected attributes: %@", event.connection.attributes);
-        }
-    
-        // Wrong objects
-        if (expectedValue) {
-            RKMappingTestCondition(connectedValue, RKMappingTestValueInequalityError, error, @"unexpectedly connected to nil object set (%@)", connectedValue);
-            
-            if ([connectedValue isKindOfClass:[NSManagedObject class]] && [connectionExpectation.value isKindOfClass:[NSManagedObject class]]) {
-                // Do a managed object ID comparison
-                RKMappingTestCondition([[connectedValue objectID] isEqual:[expectedValue objectID]], RKMappingTestValueInequalityError, error, @"connected to unexpected managed object: %@", connectedValue);
-            } else {
-                // If we are connecting to a collection of managed objects, do a comparison of object IDs
-                if (RKObjectIsCollectionContainingOnlyManagedObjects(connectedValue) && RKObjectIsCollectionContainingOnlyManagedObjects(expectedValue)) {
-                    RKMappingTestCondition(RKObjectIsEqualToObject([connectedValue valueForKeyPath:@"objectID"], [expectedValue valueForKeyPath:@"objectID"]), RKMappingTestValueInequalityError, error, @"connected to unexpected %@ value '%@'", [connectedValue class], connectedValue);
-                } else {
-                    RKMappingTestCondition(RKObjectIsEqualToObject(connectedValue, expectedValue), RKMappingTestValueInequalityError, error, @"connected to unexpected %@ value '%@'", [connectedValue class], connectedValue);
-                }
-            }
-        } else {
-            RKMappingTestCondition(connectedValue == nil, RKMappingTestValueInequalityError, error, @"unexpectedly connected to non-nil object set (%@)", connectedValue);
-        }
-        
-        return YES;
-    }
-#endif
     return success;
 }
 
@@ -377,22 +292,7 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
     // If we have been given an explicit data source, use it
     if (self.mappingOperationDataSource) return self.mappingOperationDataSource;
     
-#ifdef RKCoreDataIncluded
-    if ([self.mapping isKindOfClass:[RKEntityMapping class]]) {
-        NSAssert(self.managedObjectContext, @"Cannot test an `RKEntityMapping` with a nil managed object context.");
-        id<RKManagedObjectCaching> managedObjectCache = self.managedObjectCache ?: [RKFetchRequestManagedObjectCache new];
-        RKManagedObjectMappingOperationDataSource *dataSource = [[RKManagedObjectMappingOperationDataSource alloc] initWithManagedObjectContext:self.managedObjectContext cache:managedObjectCache];
-        
-        // Configure an operation queue to enable easy testing of connection operations
-        NSOperationQueue *operationQueue = [NSOperationQueue new];
-        dataSource.operationQueue = operationQueue;
-        return dataSource;
-    } else {
-        return [RKObjectMappingOperationDataSource new];
-    }
-#else
     return [RKObjectMappingOperationDataSource new];
-#endif
 }
 
 - (void)performMapping
@@ -411,16 +311,6 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
         }
         
         // Let the connection operations execute to completion
-#ifdef RKCoreDataIncluded
-        Class managedObjectMappingOperationDataSourceClass = NSClassFromString(@"RKManagedObjectMappingOperationDataSource");
-        if ([mappingOperation.dataSource isKindOfClass:managedObjectMappingOperationDataSourceClass]) {
-            NSOperationQueue *operationQueue = [(RKManagedObjectMappingOperationDataSource *)mappingOperation.dataSource operationQueue];
-            if (! [operationQueue isEqual:[NSOperationQueue mainQueue]]) {
-                [operationQueue waitUntilAllOperationsAreFinished];
-            }
-        }
-#endif
-
         self.performedMapping = YES;
         
         // Get the destination object from the mapping operation
@@ -530,12 +420,5 @@ NSString * const RKMappingTestVerificationFailureException = @"RKMappingTestVeri
 {
     [self addEvent:[RKMappingTestEvent eventWithMapping:mapping value:value]];
 }
-
-#ifdef RKCoreDataIncluded
-- (void)mappingOperation:(RKMappingOperation *)operation didConnectRelationship:(NSRelationshipDescription *)relationship toValue:(id)value usingConnection:(RKConnectionDescription *)connection
-{
-    [self addEvent:[RKMappingTestEvent eventWithConnection:connection value:value]];
-}
-#endif
 
 @end

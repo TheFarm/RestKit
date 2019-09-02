@@ -26,11 +26,6 @@
 #import "RKMIMETypeSerialization.h"
 #import "RKObjectRequestOperation.h"
 
-#if __has_include("CoreData.h")
-#define RKCoreDataIncluded
-#import "RKManagedObjectStore.h"
-#endif
-
 // Expose MIME Type singleton and initialization routine
 @interface RKMIMETypeSerialization ()
 + (RKMIMETypeSerialization *)sharedSerialization;
@@ -127,23 +122,6 @@
 
         return objectManager;
     }];
-
-#ifdef RKCoreDataIncluded
-    [self defineFactory:RKTestFactoryDefaultNamesManagedObjectStore withBlock:^id {
-        NSString *storePath = [RKApplicationDataDirectory() stringByAppendingPathComponent:RKTestFactoryDefaultStoreFilename];
-        RKManagedObjectStore *managedObjectStore = [[RKManagedObjectStore alloc] init];
-        NSError *error;
-        NSPersistentStore *persistentStore = [managedObjectStore addSQLitePersistentStoreAtPath:storePath fromSeedDatabaseAtPath:nil withConfiguration:nil options:nil error:&error];
-        if (persistentStore) {
-            BOOL success = [managedObjectStore resetPersistentStores:&error];
-            if (! success) {
-                RKLogError(@"Failed to reset persistent store: %@", error);
-            }
-        }
-
-        return managedObjectStore;
-    }];
-#endif
 }
 
 #pragma mark - Public Static Interface
@@ -178,28 +156,6 @@
     return [[RKTestFactory sharedFactory] sharedObjectFromFactory:factoryName];
 }
 
-#ifdef RKCoreDataIncluded
-+ (id)insertManagedObjectForEntityForName:(NSString *)entityName
-                   inManagedObjectContext:(NSManagedObjectContext *)managedObjectContext
-                           withProperties:(NSDictionary *)properties
-{
-    __block id managedObject;
-    __block NSError *error;
-    __block BOOL success;
-    if (!managedObjectContext) managedObjectContext = [[RKTestFactory managedObjectStore] mainQueueManagedObjectContext];
-    [managedObjectContext performBlockAndWait:^{
-        managedObject = [NSEntityDescription insertNewObjectForEntityForName:entityName inManagedObjectContext:managedObjectContext];
-        success = [managedObjectContext obtainPermanentIDsForObjects:@[managedObject] error:&error];
-        if (! success) {
-            RKLogWarning(@"Failed to obtain permanent objectID for managed object: %@", managedObject);
-            RKLogCoreDataError(error);
-        }
-        [managedObject setValuesForKeysWithDictionary:properties];
-    }];
-    return managedObject;
-}
-#endif
-
 + (NSSet *)factoryNames
 {
     return [NSSet setWithArray:[[RKTestFactory sharedFactory].factoryBlocks allKeys]];
@@ -214,13 +170,6 @@
 {
     return [self sharedObjectFromFactory:RKTestFactoryDefaultNamesObjectManager];
 }
-
-#ifdef RKCoreDataIncluded
-+ (id)managedObjectStore
-{
-    return [self sharedObjectFromFactory:RKTestFactoryDefaultNamesManagedObjectStore];
-}
-#endif
 
 + (void)setSetupBlock:(void (^)(void))block
 {
@@ -242,9 +191,6 @@
 
     [[RKTestFactory sharedFactory].sharedObjectsByFactoryName removeAllObjects];
     [RKObjectManager setSharedManager:nil];
-#ifdef RKCoreDataIncluded
-    [RKManagedObjectStore setDefaultStore:nil];
-#endif
 
     // Restore the default MIME Type Serializations in case a test has manipulated the registry
     [[RKMIMETypeSerialization sharedSerialization] addRegistrationsForKnownSerializations];
@@ -275,30 +221,8 @@
     // Cancel any object mapping in the response mapping queue
     [[RKObjectRequestOperation responseMappingQueue] cancelAllOperations];
 
-#ifdef RKCoreDataIncluded
-    // Ensure the existing defaultStore is shut down
-    [[NSNotificationCenter defaultCenter] removeObserver:[RKManagedObjectStore defaultStore]];
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wundeclared-selector"
-    if ([[RKManagedObjectStore defaultStore] respondsToSelector:@selector(stopIndexingPersistentStoreManagedObjectContext)]) {
-        // Search component is optional
-        [[RKManagedObjectStore defaultStore] performSelector:@selector(stopIndexingPersistentStoreManagedObjectContext)];
-
-        if ([[RKManagedObjectStore defaultStore] respondsToSelector:@selector(searchIndexer)]) {
-            id searchIndexer = [[RKManagedObjectStore defaultStore] valueForKey:@"searchIndexer"];
-            [searchIndexer performSelector:@selector(cancelAllIndexingOperations)];
-        }
-    }
-#pragma clang diagnostic pop
-
-#endif
-
     [[RKTestFactory sharedFactory].sharedObjectsByFactoryName removeAllObjects];
     [RKObjectManager setSharedManager:nil];
-#ifdef RKCoreDataIncluded
-    [RKManagedObjectStore setDefaultStore:nil];
-#endif
 }
 
 @end

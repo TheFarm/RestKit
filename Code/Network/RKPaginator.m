@@ -25,11 +25,6 @@
 #import "RKPathMatcher.h"
 #import "RKHTTPUtilities.h"
 
-#if __has_include("CoreData.h")
-#define RKCoreDataIncluded
-#import "RKManagedObjectRequestOperation.h"
-#endif
-
 static NSUInteger RKPaginatorDefaultPerPage = 25;
 
 // Private interface
@@ -189,22 +184,7 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
     NSMutableURLRequest *mutableRequest = [self.request mutableCopy];
     mutableRequest.URL = self.URL;
 
-#ifdef RKCoreDataIncluded
-    if (self.managedObjectContext) {
-        RKHTTPRequestOperation *requestOperation = [[self.HTTPOperationClass alloc] initWithRequest:mutableRequest];
-        RKManagedObjectRequestOperation *managedObjectRequestOperation = [[RKManagedObjectRequestOperation alloc] initWithHTTPRequestOperation:requestOperation responseDescriptors:self.responseDescriptors];
-        managedObjectRequestOperation.managedObjectContext = self.managedObjectContext;
-        managedObjectRequestOperation.managedObjectCache = self.managedObjectCache;
-        managedObjectRequestOperation.fetchRequestBlocks = self.fetchRequestBlocks;
-        managedObjectRequestOperation.deletesOrphanedObjects = NO;
-        
-        self.objectRequestOperation = managedObjectRequestOperation;
-    } else {
-        self.objectRequestOperation = [[RKObjectRequestOperation alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
-    }
-#else
     self.objectRequestOperation = [[RKObjectRequestOperation alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
-#endif
     
     // Append mapping metadata if any.
     self.objectRequestOperation.mappingMetadata = self.mappingMetadata;
