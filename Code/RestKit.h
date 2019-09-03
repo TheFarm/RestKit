@@ -18,6 +18,8 @@
 //  limitations under the License.
 //
 
+#import <Foundation/Foundation.h>
+
 //! Project version number for RestKit.
 FOUNDATION_EXPORT double RestKitVersionNumber;
 
