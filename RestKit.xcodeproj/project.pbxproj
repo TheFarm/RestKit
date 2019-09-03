@@ -1509,7 +1509,6 @@
 				OBJROOT = "$(SRCROOT)/Build";
 				PRODUCT_BUNDLE_IDENTIFIER = org.restkit.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYMROOT = "$(SRCROOT)/Build/Products";
 			};
 			name = Debug;
 		};
@@ -1674,7 +1673,6 @@
 				OBJROOT = "$(SRCROOT)/Build";
 				PRODUCT_BUNDLE_IDENTIFIER = org.restkit.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYMROOT = "$(SRCROOT)/Build/Products";
 			};
 			name = Release;
 		};
