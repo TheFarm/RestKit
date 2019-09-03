@@ -24,8 +24,3 @@
 #import "RKTestFactory.h"
 #import "RKTestHelpers.h"
 #import "RKMappingTest.h"
-
-#if __has_include("CoreData.h")
-#import "RKConnectionTestExpectation.h"
-#endif
-

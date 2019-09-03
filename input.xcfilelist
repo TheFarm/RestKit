@@ -1,0 +1,5 @@
+$(SRCROOT)/Carthage/Build/iOS/TransitionKit.framework
+$(SRCROOT)/Carthage/Build/iOS/AFNetworking.framework
+$(SRCROOT)/Carthage/Build/iOS/CocoaLumberjack.framework
+$(SRCROOT)/Carthage/Build/iOS/SOCKit.framework
+$(SRCROOT)/Carthage/Build/iOS/ISO8601.framework

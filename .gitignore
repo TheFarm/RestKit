@@ -34,3 +34,6 @@ DerivedData
 .bundle
 bin
 RestKit.xcscmblueprint
+
+# Carthage
+Carthage/

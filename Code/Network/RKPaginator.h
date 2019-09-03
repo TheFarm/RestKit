@@ -157,27 +157,6 @@
  */
 @property (nonatomic, strong) RKObjectMapping *paginationMapping;
 
-///------------------------------
-/// @name Core Data Configuration
-///------------------------------
-
-#if __has_include("CoreData.h")
-/**
- The managed object context in which paginated managed objects are to be persisted.
- */
-@property (nonatomic, strong) NSManagedObjectContext *managedObjectContext;
-
-/**
- The managed object cache used to find existing managed object instances in the persistent store.
- */
-@property (nonatomic, strong) id<RKManagedObjectCaching> managedObjectCache;
-
-/**
- An array of fetch request blocks.
- */
-@property (nonatomic, copy) NSArray *fetchRequestBlocks;
-#endif
-
 ///------------------------------------
 /// @name Accessing Pagination Metadata
 ///------------------------------------

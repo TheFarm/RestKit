@@ -217,26 +217,4 @@ extern NSString * const RKMappingTestExpectationErrorKey;
  */
 @property (nonatomic, strong, readonly) id destinationObject;
 
-#if __has_include("CoreData.h")
-
-///----------------------------
-/// @name Core Data Integration
-///----------------------------
-
-/**
- The managed object context within which to perform the mapping test. Required if testing an `RKEntityMapping` object and an appropriate `mappingOperationDataSource` has not been configured.
- 
- When the `mappingOperationDataSource` property is `nil` and the test targets an entity mapping, this context is used to configure an `RKManagedObjectMappingOperationDataSource` object for the purpose of executing the test.
- */
-@property (nonatomic, strong) NSManagedObjectContext *managedObjectContext;
-
-/**
- The managed object cache to use when performing a mapping test.
- 
- If the value of this property is `nil` and the test targets an entity mapping, an instance of `RKFetchRequestManagedObjectCache` will be constructed and used as the cache for the purposes of testing.
- */
-@property (nonatomic, strong) id<RKManagedObjectCaching> managedObjectCache;
-
-#endif // #if __has_include("CoreData.h")
-
 @end

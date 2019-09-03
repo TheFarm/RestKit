@@ -169,45 +169,5 @@ void RKLogIntegerAsBinary(NSUInteger bitMask)
 
 void RKLogValidationError(NSError *error)
 {
-#if __has_include("CoreData.h")
-    if ([[error domain] isEqualToString:NSCocoaErrorDomain]) {
-        NSDictionary *userInfo = [error userInfo];
-        NSArray *errors = [userInfo valueForKey:@"NSDetailedErrors"];
-        if (errors) {
-            for (NSError *detailedError in errors) {
-                NSDictionary *subUserInfo = [detailedError userInfo];
-                RKLogError(@"Detailed Error\n \
-                           NSLocalizedDescriptionKey:\t\t%@\n \
-                           NSValidationKeyErrorKey:\t\t\t%@\n \
-                           NSValidationPredicateErrorKey:\t%@\n \
-                           NSValidationObjectErrorKey:\n%@\n",
-                           [subUserInfo valueForKey:NSLocalizedDescriptionKey],
-                           [subUserInfo valueForKey:NSValidationKeyErrorKey],
-                           [subUserInfo valueForKey:NSValidationPredicateErrorKey],
-                           [subUserInfo valueForKey:NSValidationObjectErrorKey]);
-            }
-        } else {
-            RKLogError(@"Validation Error\n \
-                       NSLocalizedDescriptionKey:\t\t%@\n \
-                       NSValidationKeyErrorKey:\t\t\t%@\n \
-                       NSValidationPredicateErrorKey:\t%@\n \
-                       NSValidationObjectErrorKey:\n%@\n",
-                       [userInfo valueForKey:NSLocalizedDescriptionKey],
-                       [userInfo valueForKey:NSValidationKeyErrorKey],
-                       [userInfo valueForKey:NSValidationPredicateErrorKey],
-                       [userInfo valueForKey:NSValidationObjectErrorKey]);
-        }
-        return;
-    }
-#endif
     RKLogError(@"Validation Error: %@ (userInfo: %@)", error, [error userInfo]);
 }
-
-#if __has_include("CoreData.h")
-void RKLogCoreDataError(NSError *error)
-{
-    RKLogToComponentWithLevelWhileExecutingBlock(RKlcl_cRestKitCoreData, RKLogLevelError, ^{
-        RKLogValidationError(error);
-    });
-}
-#endif

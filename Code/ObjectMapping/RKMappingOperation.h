@@ -18,10 +18,6 @@
 //  limitations under the License.
 //
 
-#if __has_include("CoreData.h")
-#import <CoreData/CoreData.h>
-#endif
-
 #import "RKObjectMapping.h"
 #import "RKAttributeMapping.h"
 
@@ -111,37 +107,6 @@
  @param dynamicMapping The dynamic source mapping from which the object mapping was determined.
  */
 - (void)mappingOperation:(RKMappingOperation *)operation didSelectObjectMapping:(RKObjectMapping *)objectMapping forDynamicMapping:(RKDynamicMapping *)dynamicMapping;
-
-#if __has_include("CoreData.h")
-
-///----------------------------------------
-/// @name Tracking Relationship Connections
-///----------------------------------------
-
-/**
- Tells the delegate that the mapping operation has connected a relationship.
-
- Only sent when mapping an `RKEntityMapping` object that contains connection mappings.
-
- @param operation The mapping operation.
- @param relationship The relationship that was connected.
- @param value The value that was connected to the relationship
- @param connection The connection object describing how the relationship was to be connected.
- */
-- (void)mappingOperation:(RKMappingOperation *)operation didConnectRelationship:(NSRelationshipDescription *)relationship toValue:(id)value usingConnection:(RKConnectionDescription *)connection;
-
-/**
- Tells the delegate that the mapping operation failed to connect a relationship.
-
- Only sent when mapping an `RKEntityMapping` object that contains connection mappings.
-
- @param operation The mapping operation.
- @param relationship The relationship that was connected.
- @param connection The connection object describing how the relationship was to be connected.
- */
-- (void)mappingOperation:(RKMappingOperation *)operation didFailToConnectRelationship:(NSRelationshipDescription *)relationship usingConnection:(RKConnectionDescription *)connection;
-
-#endif
 
 @end
 

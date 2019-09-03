@@ -22,10 +22,6 @@
 #import "RKMapperOperation.h"
 #import "RKMappingResult.h"
 
-#if __has_include("CoreData.h")
-@protocol RKManagedObjectCaching;
-#endif
-
 /**
  `RKResponseMapperOperation` is an `NSOperation` that provides support for performing object mapping on an `NSHTTPURLResponse` and its associated response data.
  
@@ -204,49 +200,6 @@
  */
 @interface RKObjectResponseMapperOperation : RKResponseMapperOperation
 @end
-
-#if __has_include("CoreData.h")
-/**
- `RKManagedObjectResponseMapperOperation` is an `RKResponseMapperOperation` subclass that provides support for performing object mapping using `RKEntityMapping` objects that target `NSManagedObject` derived classes. It requires an `NSManagedObjectContext` and a configured `RKManagedObjectMappingOperationDataSource` data source to execute successfully.
- 
- Performing response mapping that targets Core Data managed objects imposes some additional constraints on the process that the developer should understand thoroughly:
- 
- 1. **Permanent Managed Object IDs**: When using managed object contexts in a parent-child configuration, it is important to obtain a permanent `NSManagedObjectID` for any existing objects that are to be mapped. Mapping that occur against objecs with temporary managedObjectID's cannot be retrieved across contexts by ID. If executing an `RKManagedObjectResponseMapperOperation` against a `NSManagedObject` targetObject with a temporary ID.
- 1. **Persisting Mapped Objects**: Instances of `RKManagedObjectResponseMapperOperation` do **NOT** perform any persistence on the `NSManagedObject` in which the mapping occurs. This is by design and ensures that the operation can be used to compose higher level components that handle persistence. It is the developer's responsibility to ensure that the mapped managed objects are eventually persisted.
- 
- @see `RKManagedObjectMappingOperationDataSource`
- @see `[NSManagedObjectContext obtainPermanentIDsForObjects:error:]`
- */
-@interface RKManagedObjectResponseMapperOperation : RKResponseMapperOperation
-
-///----------------------------
-/// @name Configuring Core Data
-///----------------------------
-
-/**
- The managed object context in which the mapping will be performed. 
- 
- @warning The `NSManagedObjectContext` given **must** have a `concurrencyType` of either `NSPrivateQueueConcurrencyType` or `NSMainQueueConcurrencyType`. Thread confined contexts are not supported.
- */
-@property (nonatomic, strong) NSManagedObjectContext *managedObjectContext;
-
-/**
- An object implementing the `RKManagedObjectCaching` protocol to be used for retrieving existing `NSManagedObject` instances by identification attributes. If `nil`, existing object cannot be retrieved and new objects will be created for all mappable content within the response data, likely resulting in the creation of duplicate objects.
- 
- @see `RKManagedObjectCaching`
- */
-@property (nonatomic, weak) id<RKManagedObjectCaching> managedObjectCache;
-
-/**
- The permanent `NSManagedObjectID` for the target object of the mapping operation. During mapping, an instance local to the `managedObjectContext` is fetched and used to perform the mapping operation.
-
- If `nil` and the `targetObject` is a managed object, the `objectID` of the target object will be used.
- */
-@property (nonatomic, copy) NSManagedObjectID *targetObjectID;
-
-@end
-
-#endif
 
 ///----------------
 /// @name Functions

@@ -145,7 +145,7 @@ static RKSourceToDesinationKeyTransformationBlock defaultSourceToDestinationKeyT
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         // Add an ISO8601DateFormatter to the transformation stack for backwards compatibility
-        RKISO8601DateFormatter *dateFormatter = [RKISO8601DateFormatter defaultISO8601DateFormatter];
+        ISO8601DateFormatter *dateFormatter = [ISO8601DateFormatter defaultISO8601DateFormatter];
         [[RKValueTransformer defaultValueTransformer] insertValueTransformer:dateFormatter atIndex:0];
     });
 }

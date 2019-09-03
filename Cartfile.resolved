@@ -1,0 +1,5 @@
+github "AFNetworking/AFNetworking" "3.2.1"
+github "CocoaLumberjack/CocoaLumberjack" "3.5.3"
+github "TheFarm/SOCKit" "128693b3eb101fb4cf56db4a8ca5b4d2a08975fa"
+github "TheFarm/TransitionKit" "8008c2c352606195c6edc936f33558a6aadfddea"
+github "TheFarm/iso-8601-date-formatter" "bc243c08559dae617f755c46339518ae422ca2ab"

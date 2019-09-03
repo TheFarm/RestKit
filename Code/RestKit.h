@@ -18,6 +18,12 @@
 //  limitations under the License.
 //
 
+//! Project version number for RestKit.
+FOUNDATION_EXPORT double RestKitVersionNumber;
+
+//! Project version string for RestKit.
+FOUNDATION_EXPORT const unsigned char RestKitVersionString[];
+
 #ifndef _RESTKIT_
 #define _RESTKIT_
 
@@ -33,9 +39,6 @@
 #import "Support.h"
 #endif
 
-#if __has_include("CoreData.h")
-#import "CoreData.h"
-#endif
 
 /**
  Set the App logging component. This header
