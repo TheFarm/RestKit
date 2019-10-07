@@ -41,6 +41,7 @@ FOUNDATION_EXPORT const unsigned char RestKitVersionString[];
 #import "Support.h"
 #endif
 
+#import "RKLumberjackLogger.h"
 
 /**
  Set the App logging component. This header
