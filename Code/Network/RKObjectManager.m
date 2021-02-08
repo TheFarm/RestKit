@@ -835,6 +835,8 @@ static NSString *RKMIMETypeFromAFHTTPClientParameterEncoding(AFRKHTTPClientParam
     paginator.operationQueue = self.operationQueue;
     Class HTTPOperationClass = [self requestOperationClassForRequest:request fromRegisteredClasses:self.registeredHTTPRequestOperationClasses];
     if (HTTPOperationClass) [paginator setHTTPOperationClass:HTTPOperationClass];
+    Class ObjectOperationClass = [self requestOperationClassForRequest:request fromRegisteredClasses:self.registeredObjectRequestOperationClasses];
+    if (ObjectOperationClass) [paginator setObjectOperationClass:ObjectOperationClass];
     return paginator;
 }
 

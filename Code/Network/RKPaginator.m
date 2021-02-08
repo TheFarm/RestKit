@@ -36,6 +36,7 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
 @interface RKPaginator ()
 @property (nonatomic, copy) NSURLRequest *request;
 @property (nonatomic, strong) Class HTTPOperationClass;
+@property (nonatomic, strong) Class ObjectOperationClass;
 @property (nonatomic, copy) NSArray *responseDescriptors;
 @property (nonatomic, assign, readwrite) NSUInteger currentPage;
 @property (nonatomic, assign, readwrite) NSUInteger offset;
@@ -70,6 +71,7 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
     self = [super init];
     if (self) {
         self.HTTPOperationClass = [RKHTTPRequestOperation class];
+        self.ObjectOperationClass = [RKObjectRequestOperation class];
         self.request = request;
         self.paginationMapping = paginationMapping;
         self.responseDescriptors = responseDescriptors;
@@ -105,6 +107,12 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
 {
     NSAssert(operationClass == nil || [operationClass isSubclassOfClass:[RKHTTPRequestOperation class]], @"The HTTP operation class must be a subclass of `RKHTTPRequestOperation`");
     _HTTPOperationClass = operationClass;
+}
+
+- (void)setObjectOperationClass:(Class)operationClass
+{
+    NSAssert(operationClass == nil || [operationClass isSubclassOfClass:[RKObjectRequestOperation class]], @"The Object operation class must be a subclass of `RKObjectRequestOperation`");
+    _ObjectOperationClass = operationClass;
 }
 
 - (void)setCompletionBlockWithSuccess:(void (^)(RKPaginator *paginator, NSArray *objects, NSUInteger page))success
@@ -200,10 +208,10 @@ static NSUInteger RKPaginatorDefaultPerPage = 25;
         
         self.objectRequestOperation = managedObjectRequestOperation;
     } else {
-        self.objectRequestOperation = [[RKObjectRequestOperation alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
+        self.objectRequestOperation = [[self.ObjectOperationClass alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
     }
 #else
-    self.objectRequestOperation = [[RKObjectRequestOperation alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
+    self.objectRequestOperation = [[self.ObjectOperationClass alloc] initWithRequest:mutableRequest responseDescriptors:self.responseDescriptors];
 #endif
     
     // Append mapping metadata if any.
